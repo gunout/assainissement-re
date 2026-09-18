@@ -1,0 +1,53 @@
+name: Mise à jour des données assainissement
+
+on:
+  schedule:
+    # Tous les lundis à 6h UTC (10h à La Réunion)
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/update-data.yml'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🔄 Récupération des données
+        run: node scripts/fetch-data.js
+
+      - name: 📝 Vérifier le fichier généré
+        run: |
+          if [ -f data/stations.json ]; then
+            echo "✅ Fichier généré :"
+            head -20 data/stations.json
+          else
+            echo "❌ Aucun fichier généré"
+            exit 1
+          fi
+
+      - name: 💾 Commit et push si changement
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/stations.json
+          if git diff --staged --quiet; then
+            echo "ℹ️  Aucun changement"
+          else
+            git commit -m "chore: mise à jour auto des données $(date -u '+%Y-%m-%d %H:%M UTC')"
+            git push
+            echo "✅ Données poussées"
+          fi
