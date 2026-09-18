@@ -1,104 +1,109 @@
 // scripts/fetch-data.js
+// Script Node.js — s'exécute sur les serveurs GitHub (aucun blocage CORS)
+
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-const DEPARTEMENT_REUNION = '974';
-const SANDE_URL = 'https://services.sandre.eaufrance.fr/geo/odp';
-const HUBEAU_URL = 'https://hubeau.eaufrance.fr/api/v1/indicateurs_services';
+const DEPARTEMENT = '974';
+const HUBEAU_BASE = 'https://hubeau.eaufrance.fr/api/v1/assainissement/ouvrages';
 
-async function fetchSandreSteu() {
+/* =========================================================
+   1. Récupération via API Hubeau Assainissement
+   ========================================================= */
+async function fetchHubeau() {
   const params = new URLSearchParams({
-    service: 'WFS', version: '2.0.0', request: 'GetFeature',
-    typeName: 'ms:Steu', outputFormat: 'application/json',
-    CQL_FILTER: `code_departement = '${DEPARTEMENT_REUNION}'`
+    code_departement: DEPARTEMENT,
+    size: '500'
   });
-  const url = `${SANDE_URL}?${params}`;
-  console.log(`🌐 Sandre → ${url}`);
-
-  const res = await fetch(url, {
-    headers: { 'User-Agent': 'Dashboard-Assainissement-Reunion/2.0' },
-    signal: AbortSignal.timeout(45000)
-  });
-  if (!res.ok) throw new Error(`Sandre HTTP ${res.status}`);
-  return res.json();
-}
-
-async function fetchHubeauIndicateurs() {
-  const params = new URLSearchParams({
-    code_departement: DEPARTEMENT_REUNION,
-    type_service: 'AC',
-    size: '100'
-  });
-  const url = `${HUBEAU_URL}/communes?${params}`;
+  const url = `${HUBEAU_BASE}?${params}`;
   console.log(`🌐 Hubeau → ${url}`);
 
   const res = await fetch(url, {
-    headers: { 'User-Agent': 'Dashboard-Assainissement-Reunion/2.0' },
-    signal: AbortSignal.timeout(30000)
+    headers: { 'Accept': 'application/json', 'User-Agent': 'Dashboard-Assainissement-Reunion/2.0' },
+    signal: AbortSignal.timeout(60000)
   });
-  if (!res.ok) throw new Error(`Hubeau HTTP ${res.status}`);
-  return res.json();
+
+  if (!res.ok) throw new Error(`Hubeau HTTP ${res.status} ${res.statusText}`);
+
+  const json = await res.json();
+  const items = json.data || [];
+  console.log(`📦 Hubeau : ${items.length} ouvrages bruts`);
+  return items;
 }
 
-function extraireAnnee(v) {
-  if (!v) return 0;
-  if (typeof v === 'number') return v;
-  const m = String(v).match(/(\d{4})/);
-  return m ? parseInt(m[1], 10) : 0;
+/* =========================================================
+   2. Transformation au format du dashboard
+   ========================================================= */
+function transformer(items) {
+  return items
+    .map(item => ({
+      commune: item.nom_commune || item.libelle_commune || '',
+      nom_station: item.nom_ouvrage || item.libelle_ouvrage || item.nom || '',
+      filiere: normaliserFiliere(item.type_traitement || item.filiere || ''),
+      capacite_eh: parseInt(item.capacite_nominale || item.capacite || 0, 10),
+      annee: parseInt(item.annee_mise_en_service || item.annee_construction || 0, 10),
+      conformite: parseFloat(item.taux_conformite || item.conformite || 0),
+      population: parseInt(item.population_commune || 0, 10)
+    }))
+    .filter(s => s.nom_station && s.commune && s.capacite_eh > 0);
 }
 
-function transformerSandre(geojson) {
-  const features = geojson.features || [];
-  console.log(`📦 Sandre : ${features.length} features brutes`);
-
-  return features.map(f => {
-    const p = f.properties || {};
-    return {
-      commune: p.nom_commune || p.NomCommune || p.commune || '',
-      nom_station: p.nom_steu || p.NomOuvrage || p.nom || '',
-      filiere: p.type_traitement || p.filiere_traitement || 'Non renseigné',
-      capacite_eh: parseInt(p.capacite_nominale || 0, 10),
-      annee: extraireAnnee(p.date_mise_service || p.annee),
-      conformite: parseFloat(p.taux_conformite || 0),
-      population: parseInt(p.population_commune || 0, 10)
-    };
-  }).filter(s => s.nom_station && s.commune);
+function normaliserFiliere(f) {
+  const s = String(f).toLowerCase();
+  if (s.includes('boue') && s.includes('activ')) return 'Boues activées';
+  if (s.includes('lagun')) return 'Lagunage';
+  if (s.includes('filtre') || s.includes('plant')) return 'Filtres plantés';
+  if (s.includes('sbr') || s.includes('sequenc')) return 'SBR';
+  return f || 'Non renseigné';
 }
 
+/* =========================================================
+   3. Fallback local
+   ========================================================= */
 async function chargerFallback() {
   const file = path.resolve('data/stations-fallback.json');
   try {
     const raw = await fs.readFile(file, 'utf-8');
     console.log('⚠️  Utilisation du fallback local');
     return JSON.parse(raw);
-  } catch {
+  } catch (e) {
+    console.warn('❌ Fallback introuvable :', e.message);
     return [];
   }
 }
 
+/* =========================================================
+   4. Sauvegarde
+   ========================================================= */
 async function sauvegarder(stations) {
   const dir = path.resolve('data');
   await fs.mkdir(dir, { recursive: true });
   const file = path.join(dir, 'stations.json');
-  await fs.writeFile(file, JSON.stringify(stations, null, 2), 'utf-8');
+
+  // Format enrichi : { stations, timestamp, source, count }
+  const payload = {
+    stations,
+    timestamp: new Date().toISOString(),
+    source: 'Hubeau Assainissement',
+    count: stations.length
+  };
+
+  await fs.writeFile(file, JSON.stringify(payload, null, 2), 'utf-8');
   console.log(`✅ ${stations.length} stations écrites dans ${file}`);
 }
 
+/* =========================================================
+   5. Programme principal
+   ========================================================= */
 async function main() {
   console.log('🚀 Démarrage de la récupération des données…\n');
+
   let stations = [];
 
   try {
-    const geojson = await fetchSandreSteu();
-    stations = transformerSandre(geojson);
-    console.log(`✅ Sandre : ${stations.length} stations valides\n`);
-  } catch (err) {
-    console.warn(`⚠️  Sandre indisponible : ${err.message}\n`);
-  }
-
-  try {
-    await fetchHubeauIndicateurs();
-    console.log('✅ Hubeau interrogé (enrichissement non utilisé)\n');
+    const items = await fetchHubeau();
+    stations = transformer(items);
+    console.log(`✅ Hubeau : ${stations.length} stations valides\n`);
   } catch (err) {
     console.warn(`⚠️  Hubeau indisponible : ${err.message}\n`);
   }
@@ -108,7 +113,7 @@ async function main() {
   }
 
   if (stations.length === 0) {
-    console.error('❌ Aucune donnée récupérée. Abandon.');
+    console.error('❌ Aucune donnée. Abandon.');
     process.exit(1);
   }
 
