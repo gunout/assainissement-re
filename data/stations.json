@@ -1,31 +1,223 @@
 {
   "stations": [
-    { "commune": "Saint-Denis", "nom_station": "STEP Saint-Denis", "filiere": "Boues activées", "capacite_eh": 85000, "annee": 1998, "conformite": 98.5, "population": 153810 },
-    { "commune": "Saint-Paul", "nom_station": "STEP Saint-Paul", "filiere": "Lagunage", "capacite_eh": 62000, "annee": 2005, "conformite": 97.2, "population": 105482 },
-    { "commune": "Saint-Pierre", "nom_station": "STEP Saint-Pierre", "filiere": "Boues activées", "capacite_eh": 48000, "annee": 2008, "conformite": 96.8, "population": 84565 },
-    { "commune": "Le Tampon", "nom_station": "STEP Le Tampon", "filiere": "Filtres plantés", "capacite_eh": 35000, "annee": 2012, "conformite": 92.1, "population": 79639 },
-    { "commune": "Saint-André", "nom_station": "STEP Saint-André", "filiere": "SBR", "capacite_eh": 28000, "annee": 1995, "conformite": 89.4, "population": 56602 },
-    { "commune": "Saint-Louis", "nom_station": "STEP Saint-Louis", "filiere": "Boues activées", "capacite_eh": 25000, "annee": 2001, "conformite": 88.2, "population": 53629 },
-    { "commune": "Saint-Joseph", "nom_station": "STEP Saint-Joseph", "filiere": "Lagunage", "capacite_eh": 18000, "annee": 2010, "conformite": 86.7, "population": 38137 },
-    { "commune": "Saint-Leu", "nom_station": "STEP Saint-Leu", "filiere": "Filtres plantés", "capacite_eh": 15000, "annee": 2015, "conformite": 94.3, "population": 34782 },
-    { "commune": "La Possession", "nom_station": "STEP La Possession", "filiere": "Boues activées", "capacite_eh": 22000, "annee": 2003, "conformite": 91.5, "population": 33506 },
-    { "commune": "Sainte-Marie", "nom_station": "STEP Sainte-Marie", "filiere": "SBR", "capacite_eh": 19000, "annee": 2007, "conformite": 95.8, "population": 34142 },
-    { "commune": "Saint-Benoît", "nom_station": "STEP Saint-Benoît", "filiere": "Boues activées", "capacite_eh": 26000, "annee": 1999, "conformite": 87.6, "population": 37822 },
-    { "commune": "Le Port", "nom_station": "STEP Le Port", "filiere": "Boues activées", "capacite_eh": 16000, "annee": 2006, "conformite": 93.4, "population": 32937 },
-    { "commune": "Sainte-Suzanne", "nom_station": "STEP Sainte-Suzanne", "filiere": "Lagunage", "capacite_eh": 13000, "annee": 2002, "conformite": 90.2, "population": 24714 },
-    { "commune": "L'Étang-Salé", "nom_station": "STEP Étang-Salé", "filiere": "Filtres plantés", "capacite_eh": 11000, "annee": 2013, "conformite": 92.8, "population": 14038 },
-    { "commune": "Petite-Île", "nom_station": "STEP Petite-Île", "filiere": "SBR", "capacite_eh": 9000, "annee": 2011, "conformite": 85.9, "population": 12395 },
-    { "commune": "Bras-Panon", "nom_station": "STEP Bras-Panon", "filiere": "Lagunage", "capacite_eh": 8000, "annee": 2009, "conformite": 88.7, "population": 13477 },
-    { "commune": "Les Avirons", "nom_station": "STEP Les Avirons", "filiere": "Filtres plantés", "capacite_eh": 7500, "annee": 2014, "conformite": 89.5, "population": 11513 },
-    { "commune": "Cilaos", "nom_station": "STEP Cilaos", "filiere": "Boues activées", "capacite_eh": 5500, "annee": 2016, "conformite": 94.1, "population": 5538 },
-    { "commune": "Entre-Deux", "nom_station": "STEP Entre-Deux", "filiere": "Filtres plantés", "capacite_eh": 6000, "annee": 2017, "conformite": 86.3, "population": 7098 },
-    { "commune": "Salazie", "nom_station": "STEP Salazie", "filiere": "Lagunage", "capacite_eh": 7000, "annee": 2004, "conformite": 87.9, "population": 7157 },
-    { "commune": "Trois-Bassins", "nom_station": "STEP Trois-Bassins", "filiere": "Filtres plantés", "capacite_eh": 6500, "annee": 2018, "conformite": 91.2, "population": 7059 },
-    { "commune": "La Plaine-des-Palmistes", "nom_station": "STEP Plaine-Palmistes", "filiere": "Boues activées", "capacite_eh": 5000, "annee": 2015, "conformite": 88.4, "population": 6664 },
-    { "commune": "Saint-Philippe", "nom_station": "STEP Saint-Philippe", "filiere": "Lagunage", "capacite_eh": 4500, "annee": 2012, "conformite": 84.7, "population": 5088 },
-    { "commune": "Sainte-Rose", "nom_station": "STEP Sainte-Rose", "filiere": "Filtres plantés", "capacite_eh": 4800, "annee": 2010, "conformite": 86.1, "population": 6339 }
+    {
+      "commune": "Saint-Denis",
+      "nom_station": "STEP Saint-Denis",
+      "filiere": "Boues activées",
+      "capacite_eh": 85000,
+      "annee": 1998,
+      "conformite": 98.5,
+      "population": 153810
+    },
+    {
+      "commune": "Saint-Paul",
+      "nom_station": "STEP Saint-Paul",
+      "filiere": "Lagunage",
+      "capacite_eh": 62000,
+      "annee": 2005,
+      "conformite": 97.2,
+      "population": 105482
+    },
+    {
+      "commune": "Saint-Pierre",
+      "nom_station": "STEP Saint-Pierre",
+      "filiere": "Boues activées",
+      "capacite_eh": 48000,
+      "annee": 2008,
+      "conformite": 96.8,
+      "population": 84565
+    },
+    {
+      "commune": "Le Tampon",
+      "nom_station": "STEP Le Tampon",
+      "filiere": "Filtres plantés",
+      "capacite_eh": 35000,
+      "annee": 2012,
+      "conformite": 92.1,
+      "population": 79639
+    },
+    {
+      "commune": "Saint-André",
+      "nom_station": "STEP Saint-André",
+      "filiere": "SBR",
+      "capacite_eh": 28000,
+      "annee": 1995,
+      "conformite": 89.4,
+      "population": 56602
+    },
+    {
+      "commune": "Saint-Louis",
+      "nom_station": "STEP Saint-Louis",
+      "filiere": "Boues activées",
+      "capacite_eh": 25000,
+      "annee": 2001,
+      "conformite": 88.2,
+      "population": 53629
+    },
+    {
+      "commune": "Saint-Joseph",
+      "nom_station": "STEP Saint-Joseph",
+      "filiere": "Lagunage",
+      "capacite_eh": 18000,
+      "annee": 2010,
+      "conformite": 86.7,
+      "population": 38137
+    },
+    {
+      "commune": "Saint-Leu",
+      "nom_station": "STEP Saint-Leu",
+      "filiere": "Filtres plantés",
+      "capacite_eh": 15000,
+      "annee": 2015,
+      "conformite": 94.3,
+      "population": 34782
+    },
+    {
+      "commune": "La Possession",
+      "nom_station": "STEP La Possession",
+      "filiere": "Boues activées",
+      "capacite_eh": 22000,
+      "annee": 2003,
+      "conformite": 91.5,
+      "population": 33506
+    },
+    {
+      "commune": "Sainte-Marie",
+      "nom_station": "STEP Sainte-Marie",
+      "filiere": "SBR",
+      "capacite_eh": 19000,
+      "annee": 2007,
+      "conformite": 95.8,
+      "population": 34142
+    },
+    {
+      "commune": "Saint-Benoît",
+      "nom_station": "STEP Saint-Benoît",
+      "filiere": "Boues activées",
+      "capacite_eh": 26000,
+      "annee": 1999,
+      "conformite": 87.6,
+      "population": 37822
+    },
+    {
+      "commune": "Le Port",
+      "nom_station": "STEP Le Port",
+      "filiere": "Boues activées",
+      "capacite_eh": 16000,
+      "annee": 2006,
+      "conformite": 93.4,
+      "population": 32937
+    },
+    {
+      "commune": "Sainte-Suzanne",
+      "nom_station": "STEP Sainte-Suzanne",
+      "filiere": "Lagunage",
+      "capacite_eh": 13000,
+      "annee": 2002,
+      "conformite": 90.2,
+      "population": 24714
+    },
+    {
+      "commune": "L'Étang-Salé",
+      "nom_station": "STEP Étang-Salé",
+      "filiere": "Filtres plantés",
+      "capacite_eh": 11000,
+      "annee": 2013,
+      "conformite": 92.8,
+      "population": 14038
+    },
+    {
+      "commune": "Petite-Île",
+      "nom_station": "STEP Petite-Île",
+      "filiere": "SBR",
+      "capacite_eh": 9000,
+      "annee": 2011,
+      "conformite": 85.9,
+      "population": 12395
+    },
+    {
+      "commune": "Bras-Panon",
+      "nom_station": "STEP Bras-Panon",
+      "filiere": "Lagunage",
+      "capacite_eh": 8000,
+      "annee": 2009,
+      "conformite": 88.7,
+      "population": 13477
+    },
+    {
+      "commune": "Les Avirons",
+      "nom_station": "STEP Les Avirons",
+      "filiere": "Filtres plantés",
+      "capacite_eh": 7500,
+      "annee": 2014,
+      "conformite": 89.5,
+      "population": 11513
+    },
+    {
+      "commune": "Cilaos",
+      "nom_station": "STEP Cilaos",
+      "filiere": "Boues activées",
+      "capacite_eh": 5500,
+      "annee": 2016,
+      "conformite": 94.1,
+      "population": 5538
+    },
+    {
+      "commune": "Entre-Deux",
+      "nom_station": "STEP Entre-Deux",
+      "filiere": "Filtres plantés",
+      "capacite_eh": 6000,
+      "annee": 2017,
+      "conformite": 86.3,
+      "population": 7098
+    },
+    {
+      "commune": "Salazie",
+      "nom_station": "STEP Salazie",
+      "filiere": "Lagunage",
+      "capacite_eh": 7000,
+      "annee": 2004,
+      "conformite": 87.9,
+      "population": 7157
+    },
+    {
+      "commune": "Trois-Bassins",
+      "nom_station": "STEP Trois-Bassins",
+      "filiere": "Filtres plantés",
+      "capacite_eh": 6500,
+      "annee": 2018,
+      "conformite": 91.2,
+      "population": 7059
+    },
+    {
+      "commune": "La Plaine-des-Palmistes",
+      "nom_station": "STEP Plaine-Palmistes",
+      "filiere": "Boues activées",
+      "capacite_eh": 5000,
+      "annee": 2015,
+      "conformite": 88.4,
+      "population": 6664
+    },
+    {
+      "commune": "Saint-Philippe",
+      "nom_station": "STEP Saint-Philippe",
+      "filiere": "Lagunage",
+      "capacite_eh": 4500,
+      "annee": 2012,
+      "conformite": 84.7,
+      "population": 5088
+    },
+    {
+      "commune": "Sainte-Rose",
+      "nom_station": "STEP Sainte-Rose",
+      "filiere": "Filtres plantés",
+      "capacite_eh": 4800,
+      "annee": 2010,
+      "conformite": 86.1,
+      "population": 6339
+    }
   ],
-  "timestamp": "2026-09-18T00:00:00.000Z",
-  "source": "Données initiales",
+  "timestamp": "2026-09-18T15:58:30.950Z",
+  "source": "Hubeau Assainissement",
   "count": 24
 }
