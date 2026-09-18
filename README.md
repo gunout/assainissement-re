@@ -285,7 +285,7 @@ SOFTWARE.
 
 ## 🌟 Aperçu
 
-<img width="1800" height="4855" alt="Aperçu du Dashboard Assainissement Réunion" src="https://github.com/user-attachments/assets/b6bccb93-81c7-44e6-a88a-e85eff644bef" />
+
 
 ---
 
