@@ -285,6 +285,8 @@ SOFTWARE.
 
 ## 🌟 Aperçu
 
+<img width="1800" height="1319" alt="Screenshot 2026-09-18 at 20-00-20 💧 Assainissement Réunion — Dashboard Officiel" src="https://github.com/user-attachments/assets/fd8b6244-de3c-4bcb-8e1e-a73da9dd131b" />
+<img width="1800" height="1677" alt="Screenshot 2026-09-18 at 20-00-35 💧 Assainissement Réunion — Dashboard Officiel" src="https://github.com/user-attachments/assets/f40b54bd-4526-43d0-857a-aa8c409598aa" />
 
 
 ---
