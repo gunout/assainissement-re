@@ -206,26 +206,10 @@ const FILIERE_COLORS = {
 };
 
 /* =========================================================================
-   2. SOURCES OFFICIELLES
+   2. CONFIGURATION DES SOURCES
    ========================================================================= */
-const SOURCES = {
-  sandre: {
-    name: 'Sandre (STEU)',
-    url: 'https://services.sandre.eaufrance.fr/geo/odp',
-    params: {
-      service: 'WFS', version: '2.0.0', request: 'GetFeature',
-      typeName: 'ms:Steu', outputFormat: 'application/json',
-      CQL_FILTER: "code_departement = '974'"
-    }
-  },
-  hubeau: {
-    name: 'Hubeau (indicateurs AC)',
-    url: 'https://hubeau.eaufrance.fr/api/v1/indicateurs_services/communes',
-    params: { code_departement: '974', type_service: 'AC', size: '100' }
-  }
-};
-
-const CACHE_KEY = 'assainissement_reunion_data_v1';
+const DATA_FILE = 'data/stations.json';
+const CACHE_KEY = 'assainissement_reunion_data_v2';
 const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
 
 /* =========================================================================
@@ -242,7 +226,7 @@ const state = {
   simCoeff: 0.7,
   data: {
     stations: [],
-    source: 'fallback',
+    source: '—',
     timestamp: null,
     loading: true,
     error: null
@@ -289,58 +273,8 @@ function prioriserStations(data){
 function confColor(c){ return c>=90?'var(--vert)':c>=80?'var(--jaune)':'var(--rouge)'; }
 
 /* =========================================================================
-   5. CHARGEMENT DES DONNÉES (avec fallback et cache)
+   5. CHARGEMENT DES DONNÉES (cascade : cache → fichier JSON → fallback)
    ========================================================================= */
-
-/** Transforme le GeoJSON Sandre au format du dashboard */
-function transformerSandre(geojson){
-  const features = geojson?.features || [];
-  return features.map(f => {
-    const p = f.properties || {};
-    return {
-      commune: p.nom_commune || p.NomCommune || p.commune || '',
-      nom_station: p.nom_steu || p.NomOuvrage || p.nom || '',
-      filiere: p.type_traitement || p.filiere_traitement || 'Non renseigné',
-      capacite_eh: parseInt(p.capacite_nominale || 0, 10),
-      annee: extraireAnnee(p.date_mise_service || p.annee),
-      conformite: parseFloat(p.taux_conformite || 0),
-      population: parseInt(p.population_commune || 0, 10)
-    };
-  }).filter(s => s.nom_station && s.commune);
-}
-function extraireAnnee(v){
-  if (!v) return 0;
-  if (typeof v === 'number') return v;
-  const m = String(v).match(/(\d{4})/); return m ? parseInt(m[1],10) : 0;
-}
-
-/** Récupère les données depuis Sandre (avec timeout) */
-async function fetchSandre(){
-  const params = new URLSearchParams(SOURCES.sandre.params);
-  const url = `${SOURCES.sandre.url}?${params}`;
-  const res = await fetch(url, {
-    headers: { 'Accept': 'application/json' },
-    signal: AbortSignal.timeout(20000)
-  });
-  if (!res.ok) throw new Error(`Sandre HTTP ${res.status}`);
-  const geojson = await res.json();
-  const stations = transformerSandre(geojson);
-  if (!stations.length) throw new Error('Sandre : 0 station retournée');
-  return stations;
-}
-
-/** Récupère les données depuis Hubeau */
-async function fetchHubeau(){
-  const params = new URLSearchParams(SOURCES.hubeau.params);
-  const url = `${SOURCES.hubeau.url}?${params}`;
-  const res = await fetch(url, {
-    headers: { 'Accept': 'application/json' },
-    signal: AbortSignal.timeout(20000)
-  });
-  if (!res.ok) throw new Error(`Hubeau HTTP ${res.status}`);
-  const json = await res.json();
-  return json.data || [];
-}
 
 /** Lecture du cache localStorage */
 function lireCache(){
@@ -354,23 +288,28 @@ function lireCache(){
 }
 
 /** Écriture du cache localStorage */
-function ecrireCache(stations, source){
+function ecrireCache(stations, source, timestamp){
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({
-      stations, source, timestamp: Date.now()
+      stations, source, timestamp
     }));
   } catch (e) { console.warn('Cache indisponible :', e); }
 }
 
-/** Chargement principal avec cascade : cache → Sandre → Hubeau → fallback */
+/** Suppression du cache */
+function viderCache(){
+  try { localStorage.removeItem(CACHE_KEY); } catch {}
+}
+
+/** Chargement principal : cache → data/stations.json → fallback */
 async function chargerDonnees(){
   state.data.loading = true;
   state.data.error = null;
 
-  /* 1. Tentative depuis le cache */
+  /* 1. Tentative depuis le cache (7 jours max) */
   const cache = lireCache();
   if (cache && (Date.now() - cache.timestamp) < CACHE_MAX_AGE_MS){
-    console.log('📦 Cache valide utilisé');
+    console.log('📦 Cache valide utilisé (' + Math.floor((Date.now() - cache.timestamp)/3600000) + 'h)');
     state.data.stations = cache.stations;
     state.data.source = cache.source + ' (cache)';
     state.data.timestamp = cache.timestamp;
@@ -378,22 +317,37 @@ async function chargerDonnees(){
     return;
   }
 
-  /* 2. Tentative en direct */
+  /* 2. Fetch depuis data/stations.json (généré par GitHub Actions) */
   try {
-    console.log('🌐 Tentative Sandre…');
-    const stations = await fetchSandre();
+    console.log('🌐 Chargement de ' + DATA_FILE + '…');
+    const res = await fetch(DATA_FILE + '?t=' + Date.now(), {
+      cache: 'no-cache',
+      headers: { 'Accept': 'application/json' }
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const json = await res.json();
+    const stations = Array.isArray(json) ? json : (json.stations || []);
+
+    if (!stations.length) throw new Error('JSON vide');
+
+    const ts = json.timestamp ? new Date(json.timestamp).getTime() : Date.now();
+
     state.data.stations = stations;
-    state.data.source = 'Sandre (direct)';
-    state.data.timestamp = Date.now();
-    ecrireCache(stations, 'Sandre');
+    state.data.source = json.source || 'GitHub Actions';
+    state.data.timestamp = ts;
+
+    ecrireCache(stations, state.data.source, ts);
     state.data.loading = false;
+    console.log(`✅ ${stations.length} stations chargées depuis ${DATA_FILE}`);
     return;
   } catch (err) {
-    console.warn('⚠️ Sandre échoué :', err.message);
+    console.warn('⚠️ ' + DATA_FILE + ' indisponible :', err.message);
     state.data.error = err.message;
   }
 
-  /* 3. Fallback cache expiré */
+  /* 3. Fallback : cache expiré */
   if (cache){
     console.log('📦 Utilisation du cache expiré');
     state.data.stations = cache.stations;
@@ -403,7 +357,7 @@ async function chargerDonnees(){
     return;
   }
 
-  /* 4. Fallback embarqué */
+  /* 4. Fallback embarqué (dernier recours) */
   console.log('📦 Utilisation des données embarquées');
   state.data.stations = DONNEES_FALLBACK;
   state.data.source = 'Données embarquées';
@@ -411,9 +365,9 @@ async function chargerDonnees(){
   state.data.loading = false;
 }
 
-/** Rafraîchissement manuel (ignore le cache) */
+/** Rafraîchissement manuel : vide le cache et recharge */
 async function rafraichirManuel(){
-  try { localStorage.removeItem(CACHE_KEY); } catch {}
+  viderCache();
   await chargerDonnees();
   render();
 }
@@ -441,7 +395,7 @@ function renderSidebar(){
     : dataAge < 24 ? `il y a ${dataAge} h`
     : `il y a ${Math.floor(dataAge/24)} j`;
 
-  const dotClass = state.data.source.includes('direct') ? 'good'
+  const dotClass = state.data.source.includes('Actions') ? 'good'
     : state.data.source.includes('cache') ? 'warn' : 'bad';
 
   sb.innerHTML = `
@@ -519,7 +473,7 @@ function renderSidebar(){
 function renderMain(){
   const m = document.getElementById('mainContent');
   if (state.data.loading){
-    m.innerHTML = `<div class="loading-msg">🔄 Chargement des données depuis les sources officielles…</div>`;
+    m.innerHTML = `<div class="loading-msg">🔄 Chargement des données…</div>`;
     return;
   }
 
@@ -531,7 +485,7 @@ function renderMain(){
     </p>
   `;
 
-  if (state.data.error){
+  if (state.data.error && !state.data.source.includes('cache')){
     html += `<div class="empty-msg" style="background:#fff8e1;border-color:#f59e0b;">
       ⚠️ Source distante indisponible (${esc(state.data.error)}) — données locales affichées
     </div>`;
@@ -546,8 +500,8 @@ function renderMain(){
   html += `
     <div class="footer">
       <strong>OFFICE DE L'EAU RÉUNION</strong> · Données sous licence ouverte Etalab 2.0<br>
-      Sources : Sandre · Hubeau · https://donnees.eaureunion.fr<br>
-      Version 2.0 · Dashboard autonome (1 fichier) · Thème 🇫🇷 Bleu Blanc Rouge
+      Sources : Hubeau · Sandre · https://donnees.eaureunion.fr<br>
+      Version 2.0 · Dashboard autonome · Thème 🇫🇷 Bleu Blanc Rouge
     </div>
   `;
 
@@ -928,15 +882,11 @@ function render(){
 }
 
 async function demarrer(){
-  /* Afficher un état de chargement rapide */
   renderSidebar();
   document.getElementById('mainContent').innerHTML =
-    `<div class="loading-msg">🔄 Chargement des données depuis les sources officielles…</div>`;
+    `<div class="loading-msg">🔄 Chargement des données depuis data/stations.json…</div>`;
 
-  /* Charger les données (cache → Sandre → fallback) */
   await chargerDonnees();
-
-  /* Rendu final */
   render();
 }
 
