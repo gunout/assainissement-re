@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>💧 Assainissement Réunion — Dashboard Officiel</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bleu:#002395;--bleu-clair:#1D4ED8;--bleu-moyen:#3B82F6;--bleu-pale:#DBEAFE;--bleu-tres-pale:#EFF6FF;
+  --rouge:#ED2939;--rouge-fonce:#C8102E;--vert:#22c55e;--jaune:#f59e0b;
+  --blanc:#fff;--bg:#f7fafd;--panel:#fff;--border:#dbe6f3;--text:#0f172a;--muted:#64748b;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--text);font-size:15px;padding-top:6px;
+}
+.tricolore{position:fixed;top:0;left:0;right:0;height:6px;z-index:100;display:flex;box-shadow:0 1px 4px rgba(0,0,0,.15);}
+.tricolore i{flex:1;}
+.tricolore i:nth-child(1){background:#002395;}
+.tricolore i:nth-child(2){background:#fff;}
+.tricolore i:nth-child(3){background:#ED2939;}
+.app{display:flex;min-height:100vh;align-items:flex-start;}
+
+/* SIDEBAR */
+.sidebar{
+  width:290px;flex:0 0 290px;
+  background:linear-gradient(180deg,#f0f6ff 0%,#e6f0fc 100%);
+  border-right:1px solid var(--border);padding:24px 16px 40px;
+  height:100vh;position:sticky;top:0;overflow-y:auto;
+}
+.sidebar h2{font-size:1rem;margin:0 0 16px;color:var(--bleu);letter-spacing:.3px;font-weight:800;display:flex;align-items:center;gap:8px;}
+.sidebar h2::before{content:'';width:6px;height:20px;border-radius:3px;background:linear-gradient(180deg,var(--bleu),var(--rouge));}
+.sidebar h3{font-size:.73rem;text-transform:uppercase;letter-spacing:.1em;color:var(--bleu-clair);margin:22px 0 9px;font-weight:800;border-bottom:1px dashed #c7d9ee;padding-bottom:6px;}
+.nav{display:flex;flex-direction:column;gap:5px;}
+.nav-btn{text-align:left;padding:10px 13px;border-radius:9px;border:1px solid transparent;background:transparent;color:#334155;font-size:.87rem;cursor:pointer;transition:.18s;font-family:inherit;font-weight:500;}
+.nav-btn:hover{background:#dce9fa;color:var(--bleu);}
+.nav-btn.active{background:linear-gradient(90deg,var(--bleu),var(--bleu-clair));color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(0,35,149,.3);}
+.select-wrap{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+select,input[type=number],input[type=range]{font-family:inherit;font-size:.87rem;padding:9px 12px;border-radius:9px;border:1px solid var(--border);background:#fff;color:var(--text);outline:none;transition:.18s;width:100%;}
+select:focus{border-color:var(--bleu-moyen);box-shadow:0 0 0 3px rgba(59,130,246,.18);}
+input[type=range]{padding:0;height:6px;accent-color:var(--bleu);cursor:pointer;}
+.range-row{margin:12px 0;display:flex;flex-direction:column;gap:6px;}
+.range-row label{font-size:.82rem;color:#334155;font-weight:600;display:flex;justify-content:space-between;}
+.range-row .val{color:var(--bleu);font-weight:800;}
+.resume{background:#fff;border:1px solid var(--border);border-radius:11px;padding:12px 14px;font-size:.78rem;line-height:1.6;margin-top:8px;}
+.resume strong{color:var(--bleu);display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.resume p{margin:3px 0;color:#334155;}
+.resume .big{color:var(--rouge);font-weight:800;}
+
+/* DATA STATUS */
+.data-status{background:#fff;border:1px solid var(--border);border-radius:11px;padding:10px 12px;font-size:.75rem;margin-top:8px;}
+.data-status .row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.data-status .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.data-status .dot.good{background:var(--vert);box-shadow:0 0 6px var(--vert);}
+.data-status .dot.warn{background:var(--jaune);}
+.data-status .dot.bad{background:var(--rouge);}
+.data-status .label{color:#334155;font-weight:600;}
+.data-status .value{color:var(--bleu);font-weight:800;margin-left:auto;}
+.refresh-btn{
+  width:100%;padding:8px 12px;border-radius:9px;border:1px solid var(--bleu-moyen);
+  background:linear-gradient(90deg,var(--bleu),var(--bleu-clair));color:#fff;
+  font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer;
+  transition:.18s;margin-top:8px;
+}
+.refresh-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,35,149,.3);}
+.refresh-btn:disabled{opacity:.6;cursor:wait;}
+
+/* MAIN */
+.main{flex:1;min-width:0;padding:28px 34px 70px;}
+.main-header{
+  font-size:2rem;font-weight:900;text-align:center;line-height:1.18;
+  background:linear-gradient(90deg,#002395 0%,#1D4ED8 45%,#ED2939 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+  margin:0 0 .5rem;letter-spacing:-.5px;
+}
+.sub-header{text-align:center;color:var(--muted);font-size:.9rem;margin-bottom:28px;line-height:1.6;max-width:820px;margin-left:auto;margin-right:auto;}
+.sub-header strong{color:var(--bleu);}
+.section-header{color:var(--bleu);font-size:1.02rem;font-weight:800;letter-spacing:.02em;border-bottom:3px solid transparent;border-image:linear-gradient(90deg,var(--bleu),var(--bleu-moyen),var(--rouge)) 1;padding-bottom:.5rem;margin:36px 0 18px;display:flex;align-items:center;gap:10px;}
+.section-header:first-of-type{margin-top:8px;}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px;}
+.kpi-card{background:#fff;border-radius:14px;padding:18px 20px;box-shadow:0 2px 10px rgba(0,35,149,.06);border-left:5px solid var(--bleu);transition:.22s;}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,35,149,.14);}
+.kpi-card.rouge{border-left-color:var(--rouge);}
+.kpi-card.vert{border-left-color:var(--vert);}
+.kpi-card.jaune{border-left-color:var(--jaune);}
+.kpi-card .label{color:var(--muted);font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+.kpi-card .value{font-size:1.9rem;font-weight:900;color:var(--bleu);line-height:1.1;letter-spacing:-.5px;}
+.kpi-card.rouge .value{color:var(--rouge);}
+.kpi-card.vert .value{color:var(--vert);}
+.kpi-card.jaune .value{color:var(--jaune);}
+.kpi-card .sub{color:var(--muted);font-size:.75rem;margin-top:4px;}
+
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:18px;margin-bottom:20px;}
+.chart-box{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:0 2px 8px rgba(0,35,149,.05);}
+.chart-box h3{margin:0 0 14px;color:var(--bleu);font-size:.95rem;font-weight:800;display:flex;align-items:center;gap:8px;}
+.chart-box .canvas-wrap{position:relative;height:300px;}
+.chart-box.tall .canvas-wrap{height:400px;}
+
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;padding:4px;box-shadow:0 2px 8px rgba(0,35,149,.05);overflow-x:auto;margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:640px;}
+thead{background:linear-gradient(90deg,var(--bleu),var(--bleu-clair));color:#fff;}
+thead th{text-align:left;padding:11px 14px;font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+tbody tr{border-bottom:1px solid #eef2f8;transition:.15s;}
+tbody tr:hover{background:var(--bleu-tres-pale);}
+tbody td{padding:10px 14px;color:#334155;}
+tbody td strong{color:var(--bleu);font-weight:700;}
+.priority-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:800;color:#fff;}
+.priority-haut{background:var(--rouge);}
+.priority-moyen{background:var(--jaune);}
+.priority-faible{background:var(--vert);}
+.badge-filiere{display:inline-block;padding:3px 9px;border-radius:12px;background:var(--bleu-pale);color:var(--bleu);font-size:.7rem;font-weight:700;}
+
+.tri-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:20px;}
+.tri-row .field{flex:1;min-width:180px;display:flex;flex-direction:column;gap:5px;}
+.tri-row label{font-size:.75rem;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.04em;}
+.radio-group{display:flex;gap:8px;}
+.radio-group button{padding:8px 14px;border-radius:9px;border:1px solid var(--border);background:#fff;color:#334155;font-family:inherit;font-size:.82rem;font-weight:600;cursor:pointer;transition:.18s;}
+.radio-group button.active{background:linear-gradient(90deg,var(--bleu),var(--bleu-clair));color:#fff;border-color:var(--bleu);}
+
+.top3-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-bottom:20px;}
+.top3-card{background:linear-gradient(135deg,#f0f6ff,#fff);border:2px solid var(--bleu-moyen);border-radius:12px;padding:16px 18px;text-align:center;}
+.top3-card .medal{font-size:1.8rem;line-height:1;margin-bottom:6px;}
+.top3-card .title{color:var(--muted);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;}
+.top3-card .commune{color:var(--bleu);font-size:1.15rem;font-weight:900;margin:6px 0;}
+.top3-card .score{color:var(--rouge);font-size:.9rem;font-weight:800;}
+
+.simu-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media (max-width:800px){.simu-grid{grid-template-columns:1fr;}}
+.simu-panel{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,35,149,.05);}
+.simu-panel h3{margin:0 0 16px;color:var(--bleu);font-size:1rem;font-weight:800;border-bottom:1px dashed #c7d9ee;padding-bottom:8px;}
+.simu-result{background:linear-gradient(135deg,#f0f6ff,#fff);border-radius:12px;padding:22px;text-align:center;border:2px solid var(--bleu-moyen);margin-bottom:14px;}
+.simu-result .big-val{font-size:2.6rem;font-weight:900;color:var(--bleu);line-height:1;letter-spacing:-1px;}
+.simu-result .unit{font-size:1rem;color:var(--muted);font-weight:700;}
+.simu-result .label{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:8px;}
+.simu-detail{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eef2f8;font-size:.85rem;}
+.simu-detail:last-child{border-bottom:none;}
+.simu-detail strong{color:var(--bleu);}
+.status-good{color:var(--vert);font-weight:800;}
+.status-warn{color:var(--jaune);font-weight:800;}
+.status-bad{color:var(--rouge);font-weight:800;}
+
+.empty-msg{color:var(--muted);font-style:italic;font-size:.9rem;padding:30px 0;text-align:center;background:#fff;border:1px dashed var(--border);border-radius:12px;}
+.loading-msg{padding:40px;text-align:center;color:var(--bleu);font-weight:700;font-size:1rem;}
+
+.footer{margin-top:50px;text-align:center;color:var(--muted);font-size:.78rem;line-height:1.8;border-top:2px solid transparent;border-image:linear-gradient(90deg,var(--bleu),#fff,var(--rouge)) 1;padding-top:20px;}
+.footer strong{color:var(--bleu);}
+
+@media (max-width:900px){
+  .app{flex-direction:column;}
+  .sidebar{width:100%;flex:1 1 auto;height:auto;position:relative;border-right:none;border-bottom:1px solid var(--border);}
+  .main{padding:20px 16px 60px;}
+  .main-header{font-size:1.45rem;}
+  .kpi-card .value{font-size:1.5rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="tricolore"><i></i><i></i><i></i></div>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main" id="mainContent">
+    <div class="loading-msg">🔄 Chargement des données en cours…</div>
+  </main>
+</div>
+
+<script>
+/* =========================================================================
+   1. DONNÉES FALLBACK EMBARQUÉES
+   Source : Office de l'Eau Réunion — Bilan 2024
+   ========================================================================= */
+const DONNEES_FALLBACK = [
+  {commune:'Saint-Denis',nom_station:'STEP Saint-Denis',filiere:'Boues activées',capacite_eh:85000,annee:1998,conformite:98.5,population:153810},
+  {commune:'Saint-Paul',nom_station:'STEP Saint-Paul',filiere:'Lagunage',capacite_eh:62000,annee:2005,conformite:97.2,population:105482},
+  {commune:'Saint-Pierre',nom_station:'STEP Saint-Pierre',filiere:'Boues activées',capacite_eh:48000,annee:2008,conformite:96.8,population:84565},
+  {commune:'Le Tampon',nom_station:'STEP Le Tampon',filiere:'Filtres plantés',capacite_eh:35000,annee:2012,conformite:92.1,population:79639},
+  {commune:'Saint-André',nom_station:'STEP Saint-André',filiere:'SBR',capacite_eh:28000,annee:1995,conformite:89.4,population:56602},
+  {commune:'Saint-Louis',nom_station:'STEP Saint-Louis',filiere:'Boues activées',capacite_eh:25000,annee:2001,conformite:88.2,population:53629},
+  {commune:'Saint-Joseph',nom_station:'STEP Saint-Joseph',filiere:'Lagunage',capacite_eh:18000,annee:2010,conformite:86.7,population:38137},
+  {commune:'Saint-Leu',nom_station:'STEP Saint-Leu',filiere:'Filtres plantés',capacite_eh:15000,annee:2015,conformite:94.3,population:34782},
+  {commune:'La Possession',nom_station:'STEP La Possession',filiere:'Boues activées',capacite_eh:22000,annee:2003,conformite:91.5,population:33506},
+  {commune:'Sainte-Marie',nom_station:'STEP Sainte-Marie',filiere:'SBR',capacite_eh:19000,annee:2007,conformite:95.8,population:34142},
+  {commune:'Saint-Benoît',nom_station:'STEP Saint-Benoît',filiere:'Boues activées',capacite_eh:26000,annee:1999,conformite:87.6,population:37822},
+  {commune:'Le Port',nom_station:'STEP Le Port',filiere:'Boues activées',capacite_eh:16000,annee:2006,conformite:93.4,population:32937},
+  {commune:'Sainte-Suzanne',nom_station:'STEP Sainte-Suzanne',filiere:'Lagunage',capacite_eh:13000,annee:2002,conformite:90.2,population:24714},
+  {commune:"L'Étang-Salé",nom_station:'STEP Étang-Salé',filiere:'Filtres plantés',capacite_eh:11000,annee:2013,conformite:92.8,population:14038},
+  {commune:'Petite-Île',nom_station:'STEP Petite-Île',filiere:'SBR',capacite_eh:9000,annee:2011,conformite:85.9,population:12395},
+  {commune:'Bras-Panon',nom_station:'STEP Bras-Panon',filiere:'Lagunage',capacite_eh:8000,annee:2009,conformite:88.7,population:13477},
+  {commune:'Les Avirons',nom_station:'STEP Les Avirons',filiere:'Filtres plantés',capacite_eh:7500,annee:2014,conformite:89.5,population:11513},
+  {commune:'Cilaos',nom_station:'STEP Cilaos',filiere:'Boues activées',capacite_eh:5500,annee:2016,conformite:94.1,population:5538},
+  {commune:'Entre-Deux',nom_station:'STEP Entre-Deux',filiere:'Filtres plantés',capacite_eh:6000,annee:2017,conformite:86.3,population:7098},
+  {commune:'Salazie',nom_station:'STEP Salazie',filiere:'Lagunage',capacite_eh:7000,annee:2004,conformite:87.9,population:7157},
+  {commune:'Trois-Bassins',nom_station:'STEP Trois-Bassins',filiere:'Filtres plantés',capacite_eh:6500,annee:2018,conformite:91.2,population:7059},
+  {commune:'La Plaine-des-Palmistes',nom_station:'STEP Plaine-Palmistes',filiere:'Boues activées',capacite_eh:5000,annee:2015,conformite:88.4,population:6664},
+  {commune:'Saint-Philippe',nom_station:'STEP Saint-Philippe',filiere:'Lagunage',capacite_eh:4500,annee:2012,conformite:84.7,population:5088},
+  {commune:'Sainte-Rose',nom_station:'STEP Sainte-Rose',filiere:'Filtres plantés',capacite_eh:4800,annee:2010,conformite:86.1,population:6339}
+];
+
+const FILIERE_COLORS = {
+  'Boues activées':'#002395','Lagunage':'#1D4ED8','Filtres plantés':'#3B82F6','SBR':'#ED2939'
+};
+
+/* =========================================================================
+   2. SOURCES OFFICIELLES
+   ========================================================================= */
+const SOURCES = {
+  sandre: {
+    name: 'Sandre (STEU)',
+    url: 'https://services.sandre.eaufrance.fr/geo/odp',
+    params: {
+      service: 'WFS', version: '2.0.0', request: 'GetFeature',
+      typeName: 'ms:Steu', outputFormat: 'application/json',
+      CQL_FILTER: "code_departement = '974'"
+    }
+  },
+  hubeau: {
+    name: 'Hubeau (indicateurs AC)',
+    url: 'https://hubeau.eaufrance.fr/api/v1/indicateurs_services/communes',
+    params: { code_departement: '974', type_service: 'AC', size: '100' }
+  }
+};
+
+const CACHE_KEY = 'assainissement_reunion_data_v1';
+const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
+
+/* =========================================================================
+   3. ÉTAT GLOBAL
+   ========================================================================= */
+const state = {
+  menu: "Vue d'ensemble",
+  commune: 'Toutes',
+  compareTri: 'capacite',
+  compareOrdre: 'desc',
+  seuilPriorite: 5,
+  simSurface: 100,
+  simIntensite: 50,
+  simCoeff: 0.7,
+  data: {
+    stations: [],
+    source: 'fallback',
+    timestamp: null,
+    loading: true,
+    error: null
+  }
+};
+const chartData = {};
+let charts = {};
+
+/* =========================================================================
+   4. UTILITAIRES
+   ========================================================================= */
+function formatNum(n, d = 0){
+  return Number(n).toLocaleString('fr-FR', {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function calculerStatistiques(data){
+  if (!data.length) return {nb:0,communes:0,capacite:0,conf:0,anneeMoy:0,max:null};
+  const nb = data.length;
+  const communes = new Set(data.map(d=>d.commune)).size;
+  const capacite = data.reduce((s,d)=>s+d.capacite_eh,0);
+  const conf = data.reduce((s,d)=>s+d.conformite,0)/nb;
+  const anneeMoy = data.reduce((s,d)=>s+d.annee,0)/nb;
+  const max = data.reduce((m,d)=>d.capacite_eh>m.capacite_eh?d:m, data[0]);
+  return {nb,communes,capacite,conf,anneeMoy,max};
+}
+function filtrerCommune(data, commune){
+  if (commune === 'Toutes') return data;
+  return data.filter(d => d.commune === commune);
+}
+function prioriserStations(data){
+  if (!data.length) return [];
+  const anneeCourante = new Date().getFullYear();
+  const maxCap = Math.max(...data.map(d=>d.capacite_eh));
+  return data.map(d => {
+    const scoreAge = Math.min(10, ((anneeCourante - d.annee)/50)*10);
+    const scoreCap = (d.capacite_eh/maxCap)*10;
+    const scoreConf = (100 - d.conformite)/10;
+    const priorite = scoreAge*0.4 + scoreCap*0.3 + scoreConf*0.3;
+    return {...d, priorite};
+  }).sort((a,b)=>b.priorite-a.priorite);
+}
+function confColor(c){ return c>=90?'var(--vert)':c>=80?'var(--jaune)':'var(--rouge)'; }
+
+/* =========================================================================
+   5. CHARGEMENT DES DONNÉES (avec fallback et cache)
+   ========================================================================= */
+
+/** Transforme le GeoJSON Sandre au format du dashboard */
+function transformerSandre(geojson){
+  const features = geojson?.features || [];
+  return features.map(f => {
+    const p = f.properties || {};
+    return {
+      commune: p.nom_commune || p.NomCommune || p.commune || '',
+      nom_station: p.nom_steu || p.NomOuvrage || p.nom || '',
+      filiere: p.type_traitement || p.filiere_traitement || 'Non renseigné',
+      capacite_eh: parseInt(p.capacite_nominale || 0, 10),
+      annee: extraireAnnee(p.date_mise_service || p.annee),
+      conformite: parseFloat(p.taux_conformite || 0),
+      population: parseInt(p.population_commune || 0, 10)
+    };
+  }).filter(s => s.nom_station && s.commune);
+}
+function extraireAnnee(v){
+  if (!v) return 0;
+  if (typeof v === 'number') return v;
+  const m = String(v).match(/(\d{4})/); return m ? parseInt(m[1],10) : 0;
+}
+
+/** Récupère les données depuis Sandre (avec timeout) */
+async function fetchSandre(){
+  const params = new URLSearchParams(SOURCES.sandre.params);
+  const url = `${SOURCES.sandre.url}?${params}`;
+  const res = await fetch(url, {
+    headers: { 'Accept': 'application/json' },
+    signal: AbortSignal.timeout(20000)
+  });
+  if (!res.ok) throw new Error(`Sandre HTTP ${res.status}`);
+  const geojson = await res.json();
+  const stations = transformerSandre(geojson);
+  if (!stations.length) throw new Error('Sandre : 0 station retournée');
+  return stations;
+}
+
+/** Récupère les données depuis Hubeau */
+async function fetchHubeau(){
+  const params = new URLSearchParams(SOURCES.hubeau.params);
+  const url = `${SOURCES.hubeau.url}?${params}`;
+  const res = await fetch(url, {
+    headers: { 'Accept': 'application/json' },
+    signal: AbortSignal.timeout(20000)
+  });
+  if (!res.ok) throw new Error(`Hubeau HTTP ${res.status}`);
+  const json = await res.json();
+  return json.data || [];
+}
+
+/** Lecture du cache localStorage */
+function lireCache(){
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed.stations || !parsed.timestamp) return null;
+    return parsed;
+  } catch { return null; }
+}
+
+/** Écriture du cache localStorage */
+function ecrireCache(stations, source){
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      stations, source, timestamp: Date.now()
+    }));
+  } catch (e) { console.warn('Cache indisponible :', e); }
+}
+
+/** Chargement principal avec cascade : cache → Sandre → Hubeau → fallback */
+async function chargerDonnees(){
+  state.data.loading = true;
+  state.data.error = null;
+
+  /* 1. Tentative depuis le cache */
+  const cache = lireCache();
+  if (cache && (Date.now() - cache.timestamp) < CACHE_MAX_AGE_MS){
+    console.log('📦 Cache valide utilisé');
+    state.data.stations = cache.stations;
+    state.data.source = cache.source + ' (cache)';
+    state.data.timestamp = cache.timestamp;
+    state.data.loading = false;
+    return;
+  }
+
+  /* 2. Tentative en direct */
+  try {
+    console.log('🌐 Tentative Sandre…');
+    const stations = await fetchSandre();
+    state.data.stations = stations;
+    state.data.source = 'Sandre (direct)';
+    state.data.timestamp = Date.now();
+    ecrireCache(stations, 'Sandre');
+    state.data.loading = false;
+    return;
+  } catch (err) {
+    console.warn('⚠️ Sandre échoué :', err.message);
+    state.data.error = err.message;
+  }
+
+  /* 3. Fallback cache expiré */
+  if (cache){
+    console.log('📦 Utilisation du cache expiré');
+    state.data.stations = cache.stations;
+    state.data.source = cache.source + ' (cache expiré)';
+    state.data.timestamp = cache.timestamp;
+    state.data.loading = false;
+    return;
+  }
+
+  /* 4. Fallback embarqué */
+  console.log('📦 Utilisation des données embarquées');
+  state.data.stations = DONNEES_FALLBACK;
+  state.data.source = 'Données embarquées';
+  state.data.timestamp = Date.now();
+  state.data.loading = false;
+}
+
+/** Rafraîchissement manuel (ignore le cache) */
+async function rafraichirManuel(){
+  try { localStorage.removeItem(CACHE_KEY); } catch {}
+  await chargerDonnees();
+  render();
+}
+
+/* =========================================================================
+   6. RENDU SIDEBAR
+   ========================================================================= */
+function renderSidebar(){
+  const sb = document.getElementById('sidebar');
+  const stations = state.data.stations;
+  const stats = calculerStatistiques(stations);
+  const menus = [
+    {id:"Vue d'ensemble", label:"🏠 Vue d'ensemble"},
+    {id:'Détail stations', label:'🗺️ Détail stations'},
+    {id:'Comparatif', label:'📋 Comparatif'},
+    {id:'Priorités', label:'⚠️ Priorités'},
+    {id:'Simulation', label:'🌊 Simulation'}
+  ];
+
+  const dataAge = state.data.timestamp
+    ? Math.floor((Date.now() - state.data.timestamp) / 3600000)
+    : null;
+  const ageLabel = dataAge === null ? '—'
+    : dataAge < 1 ? 'à l\'instant'
+    : dataAge < 24 ? `il y a ${dataAge} h`
+    : `il y a ${Math.floor(dataAge/24)} j`;
+
+  const dotClass = state.data.source.includes('direct') ? 'good'
+    : state.data.source.includes('cache') ? 'warn' : 'bad';
+
+  sb.innerHTML = `
+    <h2>💧 Office de l'Eau</h2>
+
+    <h3>📡 État des données</h3>
+    <div class="data-status">
+      <div class="row">
+        <span class="dot ${dotClass}"></span>
+        <span class="label">Source</span>
+        <span class="value">${esc(state.data.source)}</span>
+      </div>
+      <div class="row">
+        <span class="dot"></span>
+        <span class="label">Âge</span>
+        <span class="value">${ageLabel}</span>
+      </div>
+      <div class="row">
+        <span class="dot"></span>
+        <span class="label">Stations</span>
+        <span class="value">${stations.length}</span>
+      </div>
+      <button class="refresh-btn" id="refreshBtn">🔄 Actualiser maintenant</button>
+    </div>
+
+    <h3>🏙️ Filtre commune</h3>
+    <div class="select-wrap">
+      <select id="communeSelect">
+        <option value="Toutes">Toutes les communes</option>
+        ${[...new Set(stations.map(s=>s.commune))].sort().map(c =>
+          `<option value="${esc(c)}" ${state.commune===c?'selected':''}>${esc(c)}</option>`
+        ).join('')}
+      </select>
+    </div>
+
+    <h3>📊 Navigation</h3>
+    <div class="nav">
+      ${menus.map(m => `
+        <button class="nav-btn ${state.menu===m.id?'active':''}" data-menu="${esc(m.id)}">
+          ${esc(m.label)}
+        </button>`).join('')}
+    </div>
+
+    <h3>📌 Résumé</h3>
+    <div class="resume">
+      <p>🏭 Stations : <strong>${stats.nb}</strong></p>
+      <p>🏙️ Communes : <strong>${stats.communes}</strong></p>
+      <p>👥 Capacité : <strong>${formatNum(stats.capacite)} EH</strong></p>
+      <p>✅ Conformité : <strong>${stats.conf.toFixed(1)}%</strong></p>
+    </div>
+
+    ${stats.max ? `
+      <h3>🏆 Leader</h3>
+      <div class="resume">
+        <p style="font-size:.95rem;color:var(--rouge);font-weight:800;">${esc(stats.max.commune)}</p>
+        <p class="big">${formatNum(stats.max.capacite_eh)} EH</p>
+      </div>` : ''}
+  `;
+
+  sb.querySelector('#communeSelect').onchange = e => { state.commune = e.target.value; render(); };
+  sb.querySelectorAll('.nav-btn').forEach(b => {
+    b.onclick = () => { state.menu = b.dataset.menu; render(); window.scrollTo({top:0,behavior:'smooth'}); };
+  });
+  sb.querySelector('#refreshBtn').onclick = async () => {
+    const btn = sb.querySelector('#refreshBtn');
+    btn.disabled = true; btn.textContent = '⏳ Actualisation…';
+    await rafraichirManuel();
+    btn.disabled = false; btn.textContent = '🔄 Actualiser maintenant';
+  };
+}
+
+/* =========================================================================
+   7. RENDU MAIN
+   ========================================================================= */
+function renderMain(){
+  const m = document.getElementById('mainContent');
+  if (state.data.loading){
+    m.innerHTML = `<div class="loading-msg">🔄 Chargement des données depuis les sources officielles…</div>`;
+    return;
+  }
+
+  let html = `
+    <h1 class="main-header">💧 ASSAINISSEMENT RÉUNION</h1>
+    <p class="sub-header">
+      <strong>Stations de traitement des eaux usées</strong> — Données officielles<br>
+      Source : <strong>${esc(state.data.source)}</strong> · Licence ouverte Etalab 2.0
+    </p>
+  `;
+
+  if (state.data.error){
+    html += `<div class="empty-msg" style="background:#fff8e1;border-color:#f59e0b;">
+      ⚠️ Source distante indisponible (${esc(state.data.error)}) — données locales affichées
+    </div>`;
+  }
+
+  if (state.menu === "Vue d'ensemble")       html += renderVueEnsemble();
+  else if (state.menu === 'Détail stations') html += renderDetailStations();
+  else if (state.menu === 'Comparatif')      html += renderComparatif();
+  else if (state.menu === 'Priorités')       html += renderPriorites();
+  else if (state.menu === 'Simulation')      html += renderSimulation();
+
+  html += `
+    <div class="footer">
+      <strong>OFFICE DE L'EAU RÉUNION</strong> · Données sous licence ouverte Etalab 2.0<br>
+      Sources : Sandre · Hubeau · https://donnees.eaureunion.fr<br>
+      Version 2.0 · Dashboard autonome (1 fichier) · Thème 🇫🇷 Bleu Blanc Rouge
+    </div>
+  `;
+
+  m.innerHTML = html;
+  attachMainListeners();
+  setTimeout(renderCharts, 0);
+}
+
+/* =========================================================================
+   8. VUES
+   ========================================================================= */
+function renderVueEnsemble(){
+  const stations = state.data.stations;
+  const stats = calculerStatistiques(stations);
+  const confC = stats.conf >= 90 ? 'vert' : stats.conf >= 80 ? 'jaune' : 'rouge';
+
+  const parCommune = {};
+  stations.forEach(s => { parCommune[s.commune] = (parCommune[s.commune]||0) + s.capacite_eh; });
+  const top10 = Object.entries(parCommune).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  const filieres = {};
+  stations.forEach(s => { filieres[s.filiere] = (filieres[s.filiere]||0) + 1; });
+
+  const anneeCourante = new Date().getFullYear();
+  const ageBins = [0,0,0,0,0,0];
+  stations.forEach(s => {
+    const a = anneeCourante - s.annee;
+    if (a < 5) ageBins[0]++; else if (a < 10) ageBins[1]++;
+    else if (a < 15) ageBins[2]++; else if (a < 20) ageBins[3]++;
+    else if (a < 25) ageBins[4]++; else ageBins[5]++;
+  });
+
+  chartData.top10 = top10;
+  chartData.filieres = filieres;
+  chartData.ageBins = ageBins;
+
+  return `
+    <h3 class="section-header">🏠 VUE D'ENSEMBLE RÉGIONALE</h3>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="label">🏭 Stations</div><div class="value">${stats.nb}</div><div class="sub">Total La Réunion</div></div>
+      <div class="kpi-card"><div class="label">👥 Capacité totale</div><div class="value">${formatNum(stats.capacite)}</div><div class="sub">Équivalent-habitants</div></div>
+      <div class="kpi-card ${confC}"><div class="label">✅ Conformité</div><div class="value">${stats.conf.toFixed(1)}%</div><div class="sub">Moyenne régionale</div></div>
+      <div class="kpi-card rouge"><div class="label">📅 Année moy.</div><div class="value">${stats.anneeMoy.toFixed(0)}</div><div class="sub">Mise en service</div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-box"><h3>📊 Top 10 communes (capacité)</h3><div class="canvas-wrap"><canvas id="chartTop10"></canvas></div></div>
+      <div class="chart-box"><h3>🥧 Répartition des filières</h3><div class="canvas-wrap"><canvas id="chartFilieres"></canvas></div></div>
+    </div>
+    <div class="chart-box"><h3>🏭 Distribution de l'âge des stations</h3><div class="canvas-wrap"><canvas id="chartAge"></canvas></div></div>
+  `;
+}
+
+function renderDetailStations(){
+  const data = filtrerCommune(state.data.stations, state.commune);
+  const titre = state.commune === 'Toutes' ? 'Toutes les stations' : state.commune;
+  if (!data.length) return `<h3 class="section-header">🗺️ ${esc(titre)}</h3><div class="empty-msg">Aucune station trouvée</div>`;
+  const capTot = data.reduce((s,d)=>s+d.capacite_eh,0);
+  const confMoy = data.reduce((s,d)=>s+d.conformite,0)/data.length;
+
+  return `
+    <h3 class="section-header">🗺️ ${esc(titre)}</h3>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="label">🏭 Stations</div><div class="value">${data.length}</div></div>
+      <div class="kpi-card"><div class="label">👥 Capacité totale</div><div class="value">${formatNum(capTot)}</div><div class="sub">EH</div></div>
+      <div class="kpi-card ${confMoy>=90?'vert':confMoy>=80?'jaune':'rouge'}"><div class="label">✅ Conformité moy.</div><div class="value">${confMoy.toFixed(1)}%</div></div>
+      <div class="kpi-card rouge"><div class="label">${state.commune!=='Toutes'?'👨‍👩‍👧‍👦 Population':'📋 Stations'}</div><div class="value">${state.commune!=='Toutes'?formatNum(data[0].population):data.length}</div></div>
+    </div>
+    <h3 class="section-header">📋 Liste des stations</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Station</th><th>Commune</th><th>Filière</th><th>Capacité (EH)</th><th>Année</th><th>Conformité</th></tr></thead>
+        <tbody>${data.map(d => `
+          <tr>
+            <td><strong>${esc(d.nom_station)}</strong></td>
+            <td>${esc(d.commune)}</td>
+            <td><span class="badge-filiere">${esc(d.filiere)}</span></td>
+            <td>${formatNum(d.capacite_eh)}</td>
+            <td>${d.annee}</td>
+            <td style="color:${confColor(d.conformite)};font-weight:800;">${d.conformite.toFixed(1)}%</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderComparatif(){
+  const stations = state.data.stations;
+  const grouped = {};
+  stations.forEach(s => {
+    if (!grouped[s.commune]) grouped[s.commune] = {commune:s.commune,capacite:0,nb:0,conf:0,annee:0,population:s.population};
+    grouped[s.commune].capacite += s.capacite_eh;
+    grouped[s.commune].nb++;
+    grouped[s.commune].conf += s.conformite;
+    grouped[s.commune].annee += s.annee;
+  });
+  const comp = Object.values(grouped).map(g => ({
+    commune: g.commune, capacite: g.capacite, nb_stations: g.nb,
+    conformite: g.conf/g.nb, annee_moyenne: g.annee/g.nb,
+    population: g.population, ratio: (g.capacite/g.population)*100
+  }));
+
+  const triKey = state.compareTri;
+  const asc = state.compareOrdre === 'asc';
+  comp.sort((a,b) => asc ? a[triKey]-b[triKey] : b[triKey]-a[triKey]);
+
+  const topCap = [...comp].sort((a,b)=>b.capacite-a.capacite)[0];
+  const topConf = [...comp].sort((a,b)=>b.conformite-a.conformite)[0];
+  const topRecent = [...comp].sort((a,b)=>b.annee_moyenne-a.annee_moyenne)[0];
+
+  chartData.comp = comp;
+
+  return `
+    <h3 class="section-header">📋 COMPARATIF INTER-COMMUNES</h3>
+    <div class="top3-grid">
+      <div class="top3-card"><div class="medal">🏆</div><div class="title">Capacité max</div><div class="commune">${esc(topCap.commune)}</div><div class="score">${formatNum(topCap.capacite)} EH</div></div>
+      <div class="top3-card"><div class="medal">✅</div><div class="title">Conformité max</div><div class="commune">${esc(topConf.commune)}</div><div class="score">${topConf.conformite.toFixed(1)}%</div></div>
+      <div class="top3-card"><div class="medal">📅</div><div class="title">Parc le plus récent</div><div class="commune">${esc(topRecent.commune)}</div><div class="score">${topRecent.annee_moyenne.toFixed(0)}</div></div>
+    </div>
+    <div class="tri-row">
+      <div class="field">
+        <label>Trier par</label>
+        <select id="triSelect">
+          <option value="capacite" ${state.compareTri==='capacite'?'selected':''}>🏭 Capacité totale</option>
+          <option value="conformite" ${state.compareTri==='conformite'?'selected':''}>✅ Conformité</option>
+          <option value="nb_stations" ${state.compareTri==='nb_stations'?'selected':''}>📊 Nombre de stations</option>
+          <option value="annee_moyenne" ${state.compareTri==='annee_moyenne'?'selected':''}>📅 Modernité</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Ordre</label>
+        <div class="radio-group" id="ordreGroup">
+          <button data-ordre="desc" class="${state.compareOrdre==='desc'?'active':''}">📉 Décroissant</button>
+          <button data-ordre="asc" class="${state.compareOrdre==='asc'?'active':''}">📈 Croissant</button>
+        </div>
+      </div>
+    </div>
+    <h3 class="section-header">📊 Classement des communes</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Commune</th><th>Capacité (EH)</th><th>Stations</th><th>Conformité</th><th>Année moy.</th><th>Population</th><th>Ratio EH/hab.</th></tr></thead>
+        <tbody>${comp.map(c => `
+          <tr>
+            <td><strong>${esc(c.commune)}</strong></td>
+            <td>${formatNum(c.capacite)}</td>
+            <td>${c.nb_stations}</td>
+            <td style="color:${confColor(c.conformite)};font-weight:800;">${c.conformite.toFixed(1)}%</td>
+            <td>${c.annee_moyenne.toFixed(0)}</td>
+            <td>${formatNum(c.population)}</td>
+            <td>${c.ratio.toFixed(1)}%</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div class="chart-box tall"><h3>🎯 Capacité vs Conformité</h3><div class="canvas-wrap"><canvas id="chartScatter"></canvas></div></div>
+  `;
+}
+
+function renderPriorites(){
+  let data = prioriserStations(state.data.stations);
+  if (state.commune !== 'Toutes') data = data.filter(d => d.commune === state.commune);
+  data = data.filter(d => d.priorite >= state.seuilPriorite);
+
+  const haut = data.filter(d => d.priorite > 7).length;
+  const moyen = data.filter(d => d.priorite > 4 && d.priorite <= 7).length;
+  const faible = data.filter(d => d.priorite <= 4).length;
+  const badge = p => p > 7 ? 'priority-haut' : p > 4 ? 'priority-moyen' : 'priority-faible';
+
+  chartData.prio = data.slice(0, 15);
+
+  return `
+    <h3 class="section-header">⚠️ PRIORISATION DES STATIONS</h3>
+    <div class="range-row" style="max-width:400px;">
+      <label>🎯 Seuil de priorité <span class="val">${state.seuilPriorite}</span></label>
+      <input type="range" id="seuilRange" min="0" max="10" value="${state.seuilPriorite}" step="1">
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card rouge"><div class="label">🔴 Priorité haute</div><div class="value">${haut}</div><div class="sub">Score &gt; 7</div></div>
+      <div class="kpi-card jaune"><div class="label">🟡 Priorité moyenne</div><div class="value">${moyen}</div><div class="sub">Score 4 — 7</div></div>
+      <div class="kpi-card vert"><div class="label">🟢 Priorité faible</div><div class="value">${faible}</div><div class="sub">Score ≤ 4</div></div>
+    </div>
+    ${data.length === 0 ? `<div class="empty-msg">Aucune station au-dessus du seuil</div>` : `
+      <div class="chart-box"><h3>📊 Top 15 stations prioritaires</h3><div class="canvas-wrap"><canvas id="chartPrio"></canvas></div></div>
+      <h3 class="section-header">📋 Stations prioritaires</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Commune</th><th>Station</th><th>Année</th><th>Capacité (EH)</th><th>Conformité</th><th>Priorité</th></tr></thead>
+          <tbody>${data.slice(0, 20).map(d => `
+            <tr>
+              <td>${esc(d.commune)}</td>
+              <td><strong>${esc(d.nom_station)}</strong></td>
+              <td>${d.annee}</td>
+              <td>${formatNum(d.capacite_eh)}</td>
+              <td style="color:${confColor(d.conformite)};font-weight:800;">${d.conformite.toFixed(1)}%</td>
+              <td><span class="priority-badge ${badge(d.priorite)}">${d.priorite.toFixed(1)}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`}
+  `;
+}
+
+function renderSimulation(){
+  const surfaceM2 = state.simSurface * 10000;
+  const intensiteMs = state.simIntensite / 3600000;
+  const debitM3s = state.simCoeff * intensiteMs * surfaceM2;
+  const debitM3h = debitM3s * 3600;
+
+  const stations = state.data.stations;
+  const capMoy = stations.reduce((s,d)=>s+d.capacite_eh,0) / (stations.length || 1);
+  const debitCapacite = capMoy * 0.00625;
+  const ratio = debitM3h / debitCapacite;
+  const ratioClass = ratio < 1 ? 'status-good' : ratio < 2 ? 'status-warn' : 'status-bad';
+  const ratioMsg = ratio < 1 ? '✅ Charge normale' : ratio < 2 ? '⚠️ Charge élevée' : '🔴 Surcharge critique';
+
+  return `
+    <h3 class="section-header">🌊 SIMULATION HYDRAULIQUE — Méthode rationnelle</h3>
+    <div class="simu-grid">
+      <div class="simu-panel">
+        <h3>⚙️ Paramètres</h3>
+        <div class="range-row"><label>🏞️ Surface <span class="val">${state.simSurface} ha</span></label><input type="range" id="simSurface" min="1" max="1000" value="${state.simSurface}" step="10"></div>
+        <div class="range-row"><label>💧 Intensité pluie <span class="val">${state.simIntensite} mm/h</span></label><input type="range" id="simIntensite" min="10" max="100" value="${state.simIntensite}" step="5"></div>
+        <div class="range-row"><label>🏗️ Coeff. ruissellement <span class="val">${state.simCoeff.toFixed(2)}</span></label><input type="range" id="simCoeff" min="0.1" max="1" value="${state.simCoeff}" step="0.05"></div>
+      </div>
+      <div class="simu-panel">
+        <h3>📊 Résultats</h3>
+        <div class="simu-result">
+          <div class="label">💦 Débit de ruissellement</div>
+          <div><span class="big-val">${debitM3h.toFixed(0)}</span> <span class="unit">m³/h</span></div>
+          <div style="color:var(--muted);font-size:.85rem;margin-top:6px;">soit ${debitM3s.toFixed(3)} m³/s</div>
+        </div>
+        <div class="simu-detail"><span>Capacité STEP moyenne</span><strong>${debitCapacite.toFixed(0)} m³/h</strong></div>
+        <div class="simu-detail"><span>Ratio de charge</span><strong class="${ratioClass}">${ratio.toFixed(2)}</strong></div>
+        <div class="simu-detail"><span>Diagnostic</span><strong class="${ratioClass}">${ratioMsg}</strong></div>
+        <div style="margin-top:16px;font-size:.78rem;color:var(--muted);line-height:1.6;">
+          <strong style="color:var(--bleu);">Formule :</strong>
+          <code style="background:#f0f6ff;padding:2px 6px;border-radius:4px;">Q = C · i · A</code>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* =========================================================================
+   9. LISTENERS
+   ========================================================================= */
+function attachMainListeners(){
+  const m = document.getElementById('mainContent');
+  const sel = m.querySelector('#triSelect');
+  if (sel) sel.onchange = e => { state.compareTri = e.target.value; render(); };
+  m.querySelectorAll('#ordreGroup button').forEach(b => {
+    b.onclick = () => { state.compareOrdre = b.dataset.ordre; render(); };
+  });
+  const seuil = m.querySelector('#seuilRange');
+  if (seuil) seuil.oninput = e => { state.seuilPriorite = parseInt(e.target.value); renderMain(); };
+  const sSurf = m.querySelector('#simSurface');
+  if (sSurf) sSurf.oninput = e => { state.simSurface = parseInt(e.target.value); renderMain(); };
+  const sInt = m.querySelector('#simIntensite');
+  if (sInt) sInt.oninput = e => { state.simIntensite = parseInt(e.target.value); renderMain(); };
+  const sCoef = m.querySelector('#simCoeff');
+  if (sCoef) sCoef.oninput = e => { state.simCoeff = parseFloat(e.target.value); renderMain(); };
+}
+
+/* =========================================================================
+   10. GRAPHIQUES
+   ========================================================================= */
+function destroyCharts(){
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e){} });
+  charts = {};
+}
+function renderCharts(){
+  destroyCharts();
+  const m = document.getElementById('mainContent');
+  if (!m || typeof Chart === 'undefined') return;
+  const gridColor = 'rgba(219,230,243,.6)';
+  const textColor = '#475569';
+  const font = { family: '"Segoe UI", system-ui, sans-serif', size: 11 };
+
+  const cTop = m.querySelector('#chartTop10');
+  if (cTop && chartData.top10){
+    charts.top10 = new Chart(cTop, {
+      type: 'bar',
+      data: { labels: chartData.top10.map(d=>d[0]), datasets: [{
+        label: 'Capacité (EH)', data: chartData.top10.map(d=>d[1]),
+        backgroundColor: chartData.top10.map((_,i)=>i===0?'#ED2939':i<3?'#1D4ED8':'#3B82F6'),
+        borderRadius: 6, borderSkipped: false
+      }]},
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+Number(ctx.parsed.y).toLocaleString('fr-FR')+' EH'}}},
+        scales:{ x:{ticks:{color:textColor,font,maxRotation:45,minRotation:45},grid:{display:false}},
+                 y:{ticks:{color:textColor,font,callback:v=>Number(v).toLocaleString('fr-FR')},grid:{color:gridColor}}}
+      }
+    });
+  }
+
+  const cFil = m.querySelector('#chartFilieres');
+  if (cFil && chartData.filieres){
+    const labels = Object.keys(chartData.filieres);
+    charts.filieres = new Chart(cFil, {
+      type: 'doughnut',
+      data: { labels, datasets:[{ data:Object.values(chartData.filieres),
+        backgroundColor:labels.map(l=>FILIERE_COLORS[l]||'#94a3b8'), borderWidth:3, borderColor:'#fff'}]},
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'55%',
+        plugins:{ legend:{position:'right', labels:{color:textColor,font:{...font,size:12},padding:12,boxWidth:14}}}}
+    });
+  }
+
+  const cAge = m.querySelector('#chartAge');
+  if (cAge && chartData.ageBins){
+    charts.age = new Chart(cAge, {
+      type: 'bar',
+      data:{ labels:['< 5 ans','5–10 ans','10–15 ans','15–20 ans','20–25 ans','> 25 ans'],
+        datasets:[{ label:'Nombre de stations', data:chartData.ageBins,
+          backgroundColor:['#22c55e','#3B82F6','#1D4ED8','#f59e0b','#ED2939','#C8102E'],
+          borderRadius:8, borderSkipped:false}]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{x:{ticks:{color:textColor,font},grid:{display:false}},
+                y:{ticks:{color:textColor,font,stepSize:2},grid:{color:gridColor},beginAtZero:true}}}
+    });
+  }
+
+  const cScat = m.querySelector('#chartScatter');
+  if (cScat && chartData.comp){
+    const data = chartData.comp;
+    const maxNb = Math.max(...data.map(d=>d.nb_stations));
+    charts.scatter = new Chart(cScat, {
+      type: 'bubble',
+      data: { datasets: data.map(d => ({
+        label: d.commune,
+        data: [{x:d.capacite, y:d.conformite, r:6+(d.nb_stations/maxNb)*14}],
+        backgroundColor:'rgba(29,78,216,.55)', borderColor:'#002395', borderWidth:2
+      }))},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{
+          title: items => items[0].dataset.label,
+          label: ctx => [` Capacité : ${Number(ctx.parsed.x).toLocaleString('fr-FR')} EH`,
+                         ` Conformité : ${ctx.parsed.y.toFixed(1)}%`,
+                         ` Stations : ${data[ctx.datasetIndex].nb_stations}`]
+        }}},
+        scales:{
+          x:{title:{display:true,text:'Capacité totale (EH)',color:textColor,font:{...font,size:12,weight:'bold'}},
+             ticks:{color:textColor,font,callback:v=>Number(v).toLocaleString('fr-FR')},grid:{color:gridColor}},
+          y:{title:{display:true,text:'Taux de conformité (%)',color:textColor,font:{...font,size:12,weight:'bold'}},
+             ticks:{color:textColor,font,callback:v=>v+'%'},grid:{color:gridColor},min:80,max:100}
+        }}
+    });
+  }
+
+  const cPrio = m.querySelector('#chartPrio');
+  if (cPrio && chartData.prio && chartData.prio.length){
+    const data = chartData.prio;
+    charts.prio = new Chart(cPrio, {
+      type: 'bar',
+      data:{ labels:data.map(d=>d.nom_station), datasets:[{
+        label:'Score', data:data.map(d=>d.priorite),
+        backgroundColor:data.map(d=>d.priorite>7?'#ED2939':d.priorite>4?'#f59e0b':'#22c55e'),
+        borderRadius:6, borderSkipped:false}]},
+      options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{
+          afterLabel: ctx => { const d = data[ctx.dataIndex];
+            return [`Commune : ${d.commune}`,`Année : ${d.annee}`,
+                    `Capacité : ${Number(d.capacite_eh).toLocaleString('fr-FR')} EH`,
+                    `Conformité : ${d.conformite.toFixed(1)}%`];}
+        }}},
+        scales:{ x:{max:10,ticks:{color:textColor,font},grid:{color:gridColor}},
+                 y:{ticks:{color:textColor,font:{...font,size:10}},grid:{display:false}}}}
+    });
+  }
+}
+
+/* =========================================================================
+   11. RENDU GLOBAL + DÉMARRAGE
+   ========================================================================= */
+function render(){
+  renderSidebar();
+  renderMain();
+}
+
+async function demarrer(){
+  /* Afficher un état de chargement rapide */
+  renderSidebar();
+  document.getElementById('mainContent').innerHTML =
+    `<div class="loading-msg">🔄 Chargement des données depuis les sources officielles…</div>`;
+
+  /* Charger les données (cache → Sandre → fallback) */
+  await chargerDonnees();
+
+  /* Rendu final */
+  render();
+}
+
+document.addEventListener('DOMContentLoaded', demarrer);
+</script>
+</body>
+</html>
